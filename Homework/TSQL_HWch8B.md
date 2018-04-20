@@ -33,6 +33,9 @@ The proprietary assignment update syntax both updates data in a table and assign
 Extract, transform, load.
 
 5. What are the semantics of MERGE.
+
+You specify the target table name in the MERGE clause and the source table name in the USING clause. You define a merge condition by specifying a predicate in the ON clause. The merge condition defines which rows in the source table have matches in the target and which don't. You define the action to take when a match is found in a clause called WHEN MATCHED THEN, and the action to take when a match is not found in the WHEN NOT MATCHED THEN clause. (pg 273)
+
 6. Write a typical INSERT OUTPUT statement.
 
 ```
@@ -44,6 +47,56 @@ INSERT INTO dbo.T1(datacol)
 ```
 
 7. Write a typical UPDATE OUTPUT statement.
+
+```
+UPDATE dbo.OrderDetails
+  SET discount += 0.05
+OUTPUT
+  inserted.orderid,
+  inserted.productid,
+  deleted.discount AS olddiscount,
+  inserted.discount AS newdiscount
+WHERE productid = 51;
+```
+(pg 284)
+
 8. Write a typical DELETE OUTPUT statement.
+
+```
+DELETE FROM dbo.Orders
+  OUTPUT
+    deleted.orderid,
+    deleted.orderdate,
+    deleted.empid,
+    deleted.custid
+WHERE orderdate < '20160101';
+```
+(pg 282)
+
 9. Write a typical MERGE OUTPUT statement.
+
+```
+MERGE INTO dbo.Customers as TGT
+USING dbo.CustomersStage AS SRC
+  ON TGT.custid = SRC.custid
+WHEN MATCHED THEN
+  UPDATE SET
+    TGT.companyname = SRC.companyname,
+    TGT.phone = SRC.phone,
+    TGT.address = SRC.address
+WHEN NOT MATCHED THEN
+  INSERT (custid, companyname, phone, address)
+  VALUES (SRC.custid, SRC.companyname, SRC.phone, SRC.address)
+OUTPUT $action AS theaction, inserted.custid,
+  deleted.companyname AS oldcompanyname,
+  inserted.companyname AS newcompanyname,
+  deleted.phone AS oldphone,
+  inserted.phone AS newphone,
+  deleted.address AS oldaddress,
+  inserted.address AS newaddress;
+  ```
+  (pg 285)
+
 10. What is nested DML?
+
+A feature you can use to directly insert into the final target table only the subset of rows you need from the full set of modified rows. (pg 285)
